@@ -14,7 +14,6 @@ export class TransactionsImportService {
         const sheet = workbook.Sheets[sheetName];
 
         const rawData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: null });
-        console.log(`📄 ${rawData.length} linhas encontradas`);
 
         for (const row of rawData) {
             row.creation_date = this.excelDateToJSDate(row.creation_date);
@@ -22,12 +21,10 @@ export class TransactionsImportService {
             row.actual_due_date = this.excelDateToJSDate(row.actual_due_date);
             row.reference_date = this.excelDateToJSDate(row.reference_date);
             row.start_date = this.excelDateToJSDate(row.start_date);
-            row.enddate = this.excelDateToJSDate(row.enddate);
+            row.end_date = this.excelDateToJSDate(row.enddate);
 
             await this.transactionsImportRepository.insertTransaction(row);
         }
-
-        console.log('✅ Importação concluída');
     }
 
     excelDateToJSDate(excelDate: number): Date {

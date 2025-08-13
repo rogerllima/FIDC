@@ -1,11 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { DbService } from "src/shared/database/database";
+import { TransactionEntity } from "src/shared/entity/transactions.entity";
 
 @Injectable()
 export class TransactionsImportRepository {
     constructor(private dbService: DbService) {}
 
-    async insertTransaction(data: any): Promise<void> {
+    async insertTransaction(data: TransactionEntity): Promise<void> {
         const sql = `
             INSERT INTO transactions_raw (
             due_date,
@@ -32,7 +33,7 @@ export class TransactionsImportRepository {
             data.abbreviated_description,
             data.is_credit,
             data.start_date,
-            data.enddate
+            data.end_date
         ];
 
         await this.dbService.query(sql, params);
