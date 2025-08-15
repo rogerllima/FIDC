@@ -1,8 +1,12 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Pool, PoolClient, QueryResult } from 'pg';
-import dotenv from 'dotenv'
+import { Pool, PoolClient } from 'pg';
+import { types } from 'pg';
+import dotenv from 'dotenv';
 
 dotenv.config();
+
+// Evita que o Postgres converta DATE para UTC e perca 1 dia
+types.setTypeParser(1082, (val: string) => val);
 
 @Injectable()
 export class DbService implements OnModuleInit {
@@ -19,9 +23,7 @@ export class DbService implements OnModuleInit {
       database: process.env.DB_DATABASE,
       password: String(process.env.DB_PASSWORD),
       port: Number(process.env.DB_PORT),
-      ssl: {
-        rejectUnauthorized: false, // necessário para Render
-      },
+      ssl: { rejectUnauthorized: false },
       max: 20,
       idleTimeoutMillis: 30000,
     });
@@ -32,10 +34,9 @@ export class DbService implements OnModuleInit {
       client.release();
     } catch (err) {
       console.error('❌ Erro ao conectar no Postgres:', err);
-      process.exit(1); // encerra o app se não conseguir conectar
+      process.exit(1);
     }
 
-    // Fecha o pool quando a aplicação encerrar
     process.once('SIGTERM', () => this.closePool());
     process.once('SIGINT', () => this.closePool());
   }
@@ -47,12 +48,10 @@ export class DbService implements OnModuleInit {
     process.exit(0);
   }
 
-  // Método para abrir uma conexão manual (opcional)
   async open(): Promise<PoolClient> {
     return await this.pool.connect();
   }
 
-  // Query genérica
   async query<T = any>(sql: string, params: any[] = []): Promise<T[]> {
     try {
       const result = await this.pool.query(sql, params);
@@ -63,10 +62,8 @@ export class DbService implements OnModuleInit {
     }
   }
 
-  // Retorna apenas uma linha
   async findOne<T = any>(sql: string, params: any[] = []): Promise<T | null> {
     const rows = await this.query<T>(sql, params);
     return rows.length ? rows[0] : null;
   }
-
 }
