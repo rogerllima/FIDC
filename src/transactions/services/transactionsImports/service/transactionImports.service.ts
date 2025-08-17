@@ -24,9 +24,9 @@ export class TransactionsProcessService {
         private readonly transactionsProcessRepository: TransactionsProcessRepository,
     ) { }
 
-    async executeFullFlow(buffer: Buffer, outputPath: string) {
+    async executeFullFlow(inputBuffer: Buffer) {
         try {
-            const workbookInput = XLSX.read(buffer, { type: 'buffer' });
+            const workbookInput = XLSX.read(inputBuffer, { type: 'buffer' });
             const sheetName = workbookInput.SheetNames[0];
             const sheet = workbookInput.Sheets[sheetName];
             const rawData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: null });
@@ -171,8 +171,10 @@ export class TransactionsProcessService {
 
             const worksheet = XLSX.utils.json_to_sheet(result);
             const workbookOut = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbookOut, worksheet, "Transacoes");
-            XLSX.writeFile(workbookOut, outputPath);
+            XLSX.utils.book_append_sheet(workbookOut, worksheet, 'Transacoes');
+
+            const xlsxBuffer: Buffer = XLSX.write(workbookOut, { type: 'buffer', bookType: 'xlsx' });
+            return xlsxBuffer;
 
         } catch (error) {
             console.error(error);

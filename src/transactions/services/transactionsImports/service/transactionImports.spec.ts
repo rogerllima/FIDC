@@ -11,7 +11,7 @@ jest.mock('xlsx', () => ({
         book_new: jest.fn(),
         book_append_sheet: jest.fn(),
     },
-    writeFile: jest.fn(),
+    write: jest.fn(),
 }));
 
 describe('TransactionsProcessService', () => {
@@ -38,20 +38,19 @@ describe('TransactionsProcessService', () => {
     });
 
     describe('excelDateToISO', () => {
-        it('deve converter número excel em data ISO', () => {
+        it('may convert excel date to ISO format', () => {
             const excelDate = 44927;
             const result = service.excelDateToISO(excelDate);
             expect(result).toBe('2023-01-01');
         });
 
-        it('deve retornar null se valor for null', () => {
+        it('may return null if value is null', () => {
             expect(service.excelDateToISO(null)).toBeNull();
         });
     });
 
     describe('executeFullFlow', () => {
         const mockBuffer = Buffer.from('fake buffer');
-        const mockOutput = 'output.xlsx';
 
         beforeEach(() => {
             (XLSX.read as jest.Mock).mockReturnValue({
@@ -78,7 +77,7 @@ describe('TransactionsProcessService', () => {
             (XLSX.utils.json_to_sheet as jest.Mock).mockReturnValue({ A1: { v: 'mock' } });
             (XLSX.utils.book_new as jest.Mock).mockReturnValue({});
             (XLSX.utils.book_append_sheet as jest.Mock).mockImplementation(() => { });
-            (XLSX.writeFile as jest.Mock).mockImplementation(() => { });
+            (XLSX.write as jest.Mock).mockReturnValue(Buffer.from('xlsx-buffer'));
 
             repository.getAllTransactions.mockResolvedValue([
                 {
@@ -97,20 +96,20 @@ describe('TransactionsProcessService', () => {
             ]);
         });
 
+        it('should return a buffer and call repository methods', async () => {
+            const result = await service.executeFullFlow(mockBuffer);
 
-        it('will call repository methods with correct parameters', async () => {
-            await service.executeFullFlow(mockBuffer, mockOutput);
-
+            expect(result).toBeInstanceOf(Buffer);
             expect(repository.insertTransaction).toHaveBeenCalledTimes(1);
             expect(repository.getAllTransactions).toHaveBeenCalledTimes(1);
             expect(repository.insertTransactionFidc).toHaveBeenCalledTimes(1);
-            expect(XLSX.writeFile).toHaveBeenCalledWith(expect.any(Object), mockOutput);
+            expect(XLSX.write).toHaveBeenCalledWith(expect.any(Object), { type: 'buffer', bookType: 'xlsx' });
         });
 
-        it('will throw an error if repository.getAllTransactions fails', async () => {
+        it('should throw an error if repository.getAllTransactions fails', async () => {
             repository.getAllTransactions.mockRejectedValueOnce(new Error('DB error'));
 
-            await expect(service.executeFullFlow(mockBuffer, mockOutput))
+            await expect(service.executeFullFlow(mockBuffer))
                 .rejects
                 .toThrow('Erro ao processar arquivo e gerar XLS');
         });

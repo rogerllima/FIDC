@@ -20,7 +20,7 @@ RUN npm run build
 FROM node:18.16.0 AS production
 
 WORKDIR /app
-
+COPY .env ./
 # Copia apenas o necessário da etapa de build
 COPY package*.json ./
 RUN npm install --only=production

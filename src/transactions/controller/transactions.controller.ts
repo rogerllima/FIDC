@@ -1,14 +1,11 @@
 import { Controller, Post, UploadedFile, UseInterceptors, Res, HttpException, HttpStatus } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as os from 'os';
 import { TransactionsProcessService } from '../services/transactionsImports/service/transactionImports.service';
 
 @Controller('transactions')
 export class TransactionsController {
-  constructor(private readonly transactionsProcessService: TransactionsProcessService) {}
+  constructor(private readonly transactionsProcessService: TransactionsProcessService) { }
 
   @Post('upload-process')
   @UseInterceptors(FileInterceptor('file'))
@@ -18,22 +15,12 @@ export class TransactionsController {
     }
 
     try {
-      const tempDir = path.join(os.tmpdir(), 'transactions');
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
+      const buffer = await this.transactionsProcessService.executeFullFlow(file.buffer);
 
-      const tempFilePath = path.join(tempDir, `transacoes_${Date.now()}.xlsx`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename="transacoes.xlsx"');
+      res.send(buffer);
 
-      await this.transactionsProcessService.executeFullFlow(file.buffer, tempFilePath);
-
-      res.download(tempFilePath, 'transacoes.xlsx', (err) => {
-        fs.unlink(tempFilePath, () => {});
-        if (err) {
-          console.error('Erro ao enviar arquivo:', err);
-          throw new HttpException('Erro ao baixar o arquivo', HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-      });
     } catch (error) {
       console.error('Erro no processamento:', error);
       throw new HttpException('Erro no processamento do arquivo', HttpStatus.INTERNAL_SERVER_ERROR);
