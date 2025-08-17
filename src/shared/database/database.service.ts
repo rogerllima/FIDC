@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Evita que o Postgres converta DATE para UTC e perca 1 dia
 types.setTypeParser(1082, (val: string) => val);
 
 @Injectable()

@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { DbService } from "src/shared/database/database";
+import { DbService } from "../../../../shared/database/database.service";
 import { TransactionEntity } from "src/shared/entity/transactions.entity";
 import { TransactionFidcEntity } from "src/shared/entity/transactionsFidc.entity";
 
